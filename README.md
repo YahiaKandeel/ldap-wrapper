@@ -1,4 +1,6 @@
 # ldap-wrapper
+The aim of this module to extract intersting data related to the users, groups, computers and contacts from your LDAP server, 
+The data is like when the object created, last time password has been rest, owner, manager and more 
 
 Configure conf/ldap.conf with the right parameters..
 

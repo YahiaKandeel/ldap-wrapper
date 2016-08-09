@@ -2,6 +2,5 @@
 from conf import *
 from ldapClass import LDAP
 from decoder import UserDecoder
-from helpers import *
-from search import *
+from search import search
 from time import timeConvert

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from ldap_wrapper import LDAP, separator
+from ldap_wrapper import LDAP, UserDecoder, search, separator
 
 #### Connecting and Dumping all AD
 ad = LDAP()

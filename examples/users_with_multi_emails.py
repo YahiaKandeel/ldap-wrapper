@@ -1,5 +1,6 @@
 #!/usr/bin/python
-from ldap_wrapper import LDAP, UserDecoder, sub_separator
+from ldap_wrapper import LDAP, UserDecoder, search, separator, sub_separator
+
 from misc.helpers import convert_hash_to_text
 
 #### Connecting to LDAP

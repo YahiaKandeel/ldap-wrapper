@@ -1,16 +1,23 @@
 #!/usr/bin/python
-from ldap_wrapper import LDAP, UserDecoder, search, separator
+import ldap_wrapper as ldap
 
-#### Connecting and Dumping all AD
-ad = LDAP()
+### Connecting to LDAP
+ad = ldap.LDAP(user=ldap.user, password=ldap.password, server=ldap.server, base=ldap.base, page_size=ldap.page_size)
 ad.connect()
 
-users = ad.dump_users()
+#### Dumping all AD
+data  = ad.dump_all()
+users = data['users']
+
+### result
+output = 'data/disabled_users_wrong_place.csv'
 
 #### Decoding all users
 decoded_users = {}
+
 for cn in users:
-	user =  UserDecoder(users[cn]).decode()
+	user = ldap.userdecode(users[cn])
+	
 	if 'Disabled' in user['userAccountControl'] and 'disable' not in cn.lower():
 		decoded_users[cn] = user
 		decoded_users[cn]['ou'] = ','.join((cn.split(',')[1:]))
@@ -20,7 +27,8 @@ keys = [	'sAMAccountName', 'displayName' ,'ou', 'userAccountControl', 'mail', 'p
 			'company',  'whenCreated' , 'lastLogonTimestamp' ,  'pwdLastSet', 'accountExpires', 
 			'homeDirectory']
 
-txt = convert_hash_to_text(decoded_users, keys, separator)
+#### Write it down
+ldap.misc.save_data_to_csv_file(output, decoded_users, keys , ',' , ' # ', replace_bad=';')
 
-#### Writing it down
-open('data/disabled_users_wrong_place.csv','w').write(txt)
+#### Notify 
+ldap.misc.notify(output, 'eng.qandeel@gmail.com', 'Disabled Users Wrong Place')

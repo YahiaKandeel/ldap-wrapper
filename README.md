@@ -1,19 +1,35 @@
 # ldap-wrapper
 The aim of this module to extract intersting data related to the users, groups, computers and contacts from your LDAP server, 
-The data is like when the object created, last time password has been rest, owner, manager and more 
 
-Configure conf/ldap.conf with the right parameters..
+Configure: 
+* conf/ldap.conf    for ldap parameter
+* conf/mailer.conf  to support smtp notifications
+
+Support:
+* Dump users, groups, computers and contacts
+* User & Groups Decode
+* Convert extracted data to CSV
+* Mail CSV file 'You can compress it as well'
+
 
 Please note that, all searches are case insensitive 
 
 ## Import 
 ```python
-from ldap_wrapper import LDAP, UserDecoder, search
+from ldap_wrapper import ldap
 ```
 
 ##Connect to LDAP:
 ```python
-ad = LDAP()
+### Create LDAP Instance
+ad = ldap.LDAP(
+				user = ldap.user, 
+				password = ldap.password, 
+				server = ldap.server, 
+				base = ldap.base, 
+				page_size = ldap.page_size
+			)
+### Connect					
 ad.connect()
 ```
 
@@ -45,28 +61,29 @@ match = ad.search_by_name('yahia*')
 Offline search is based on regex... 
 ```python
 # Syntax:
-# search(data, [sam='val'], [name='val'], [keyName='val'], [keyValue=val])
+# search(data, [sam='val'], [name='val'], [Key='val'], [Value=val])
 # data --> The dumpped data(users, groups, computers..etc)
 # sam --> for sam search
 # name --> for DisplayName search
-# keyName --> if you have another criteria you need to search against, name it here
-# keyValue --> comes with keyName, and it should contains the value here
+# Key --> if you have another criteria you need to search against, name it here
+# Value --> comes with keyName, and it should contains the value here
 
 # search all users that have kandi in their SAM
-match = search(users, sam='kandi')
+match = ldap.search(users, sam='kandi')
 
 # search all groups named as '*security*'
-matched_groups = search(groups, name='seacurity')
+matched_groups = ldap.search(groups, name='seacurity')
 
 # search all users that their manager '*yahia*'
-match = search(users, keyName='manager', keyValue='yahia')
+match = ldap.search(users, Name='manager', Value='yahia')
 ```
 
 ## Decoding
 The Current version supports only user decoder, you can decode the users by creating an object from UserDecoder, then call decode method.
 ```python
+decoded_users = {}
 for cn in match:
- 	 print UserDecoder(match[cn]).decode()
+ 	 decoded_users[cn] = ldap.userdecode(users[cn])
 ```
 
 ## Example
@@ -74,32 +91,48 @@ Suppose you want to dump all users in specific group, and convert the dumped dat
 
 ```python
 #!/usr/bin/python
-from ldap_wrapper import LDAP, search
-from misc.helpers import convert_hash_to_text
+import ldap_wrapper as ldap
+
+#### Create LDAP Instance
+ad = ldap.LDAP(
+				user = ldap.user, 
+				password = ldap.password, 
+				server = ldap.server, 
+				base = ldap.base, 
+				page_size = ldap.page_size
+			)
+
 
 #### Connecting to LDAP
-ad = LDAP()
 ad.connect()
 
 #### Dumping all AD
-users = ad.dump_users()
+data  = ad.dump_all()
+users = data['users']
+### result
+output = 'data/users.csv'
 
-#### 
-vendors = search(users,keyName='memberOf',keyValue='VENDORSUPPORT')
+#### Dumping all AD
+data  = ad.dump_all()
+users = data['users']
 
 #### Decoding all users
 decoded_users = {}
-for cn in vendors:
-	decoded_users[cn] = UserDecoder(vendors[cn]).decode()
+
+for cn in users:
+	decoded_users[cn] = ldap.userdecode(users[cn])
 	decoded_users[cn]['ou'] = ','.join((cn.split(',')[1:]))
 
-#### Generating csv
-keys = [	'sAMAccountName', 'ou' , 'userAccountControl', 'mail', 'proxyAddresses', 'description', 'manager', 'objectClass',
-			'company',  'whenCreated' , 'lastLogonTimestamp' ,  'pwdLastSet', 'accountExpires', 
-			'homeDirectory']
+#### keys
+keys = [	'sAMAccountName', 'displayName' ,'ou', 'userAccountControl', 'mail', 'proxyAddresses', 'description', 'manager', 'employeeID', 'employeeStatus', 
+			'company' , 'department', 'directReports', 'directorate', 'ipPhone', 'employeeMobile', 'memberOf', 'msRTCSIP-UserEnabled', 'title', 'c', 'co', 'l',
+			'whenCreated' , 'lastLogonTimestamp',  'pwdLastSet', 'accountExpires', 'badPasswordTime', 'badPwdCount', 'lastLogoff', 'lastLogon', 'logonCount',
+			'homeDirectory', 'homeDrive' ]
 
-csv = convert_hash_to_text(decoded_users, keys, separator)
 
-#### Writing it down
-open('data/ajn_vendors.csv','w').write(csv)
+#### Write it down
+ldap.misc.save_data_to_csv_file(output, decoded_users, keys, ',' , ' # ', replace_bad=';')
+
+#### Notify 
+ldap.misc.notify(output, 'eng.qandeel@gmail.com', 'ALL Users')
 ```

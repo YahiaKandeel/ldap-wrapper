@@ -1,30 +1,34 @@
 #!/usr/bin/python
-from ldap_wrapper import LDAP, UserDecoder, search, separator
-from misc.helpers import convert_hash_to_text
+import ldap_wrapper as ldap
 
 #### Connecting to LDAP
-ad = LDAP()
+ad = ldap.LDAP(user=ldap.user, password=ldap.password, server=ldap.server, base=ldap.base, page_size=ldap.page_size)
 ad.connect()
 
-#### Dumping all AD
+#### Dumping all AD users
 users = ad.dump_users()
 
-#### 
-vendors = search(users,keyName='memberOf',keyValue='VENDORSUPPORT')
+#### Output
+
+output = 'data/vendors.csv'
+
+#### Get All Users Which are member of VendorSupport
+vendors = ldap.search(users, Key='memberOf', Value='VENDORSUPPORT')
 
 #### Decoding all users
 decoded_users = {}
 for cn in vendors:
-	decoded_users[cn] = UserDecoder(vendors[cn]).decode()
+	decoded_users[cn] = ldap.userdecode(vendors[cn])
 	decoded_users[cn]['ou'] = ','.join((cn.split(',')[1:]))
 
 #### Generating TXT
-keys = [	'sAMAccountName', 'ou' , 'userAccountControl', 'mail', 'proxyAddresses', 'description', 'manager', 'objectClass',
-			'company',  'whenCreated' , 'lastLogonTimestamp' ,  'pwdLastSet', 'accountExpires', 
-			'homeDirectory']
+keys = [	'sAMAccountName', 'displayName' ,'ou', 'userAccountControl', 'mail', 'proxyAddresses', 'description', 'manager', 'employeeID', 'employeeStatus', 
+			'company' , 'department', 'directReports', 'directorate', 'ipPhone', 'employeeMobile', 'memberOf', 'msRTCSIP-UserEnabled', 'title', 'c', 'co', 'l',
+			'whenCreated' , 'lastLogonTimestamp',  'pwdLastSet', 'accountExpires', 'badPasswordTime', 'badPwdCount', 'lastLogoff', 'lastLogon', 'logonCount',
+			'homeDirectory', 'homeDrive' ]
 
-txt = convert_hash_to_text(decoded_users, keys, separator)
+####
+ldap.misc.save_data_to_csv_file(output, decoded_users, keys , ',' , ' # ', replace_bad=';')
 
-#### Writing it down
-open('data/ajn_vendors.csv','w').write(txt)
-
+#### Notify 
+ldap.misc.notify(output, 'eng.qandeel@gmail.com', 'Vendor Support Users')

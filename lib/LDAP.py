@@ -1,17 +1,20 @@
 #!/usr/bin/python
-import ldap, sys, functools 
-from conf import page_size, server, user, password, base
+########################################################################
+# LDAP Class
+########################################################################
+import ldap
+import sys
 from ldap.controls import SimplePagedResultsControl
 
 class LDAP():
-	def __init__(self, server=server, user=user, password=password, base=base):
-		self.server = server
-		self.user = user
-		self.password = password
-		self.users = {}
+	def __init__(self, server, user, password, base, page_size=3000):
+		self.server    = server
+		self.user      = user
+		self.password  = password
+		self.users     = {}
+		self.base      = base
 		self.page_size = page_size
-		self.base = base
-		self.data = {'groups':{}, 'computers':{}, 'users':{}, 'contacts':{}}
+		self.data      = {'groups':{}, 'computers':{}, 'users':{}, 'contacts':{}}
 	
 	def __repr__(self):
 		return "server: %s, user: %s, base: %s"%(self.server,self.user,self.base)
@@ -33,7 +36,7 @@ class LDAP():
 		### Initialize Page Control
 		self.pageControl = SimplePagedResultsControl(True, size= self.page_size, cookie='')
 		### Initialize Filter
-		searchFilter = filter #filters[filter]
+		searchFilter = filter
 		### Initialize Variables
 		pages, result, first_pass = 0, [], True
 		# Send search request First Time
@@ -57,19 +60,21 @@ class LDAP():
 	
 	#dump all intersting Data from ad
 	def dump_all(self):
-		self.data['groups'] = self.search('(objectclass=group)')
-		self.data['contacts'] = self.search('(objectclass=contact)')
+		self.data['groups']    = self.search('(objectclass=group)')
+		self.data['contacts']  = self.search('(objectclass=contact)')
 		self.data['computers'] = self.search('(objectclass=computer)')
 		users = self.search('(objectclass=user)')
+		
+		#### fine the user results
 		for cn in users:
 			if cn not in self.data['computers'] and cn not in self.data['groups']:self.data['users'][cn] = users[cn]
+		
 		return self.data
 
 	#search only users
 	def dump_users(self) :return self.search(filter='(objectclass=user)')
 	#search only groups
 	def dump_groups(self):return self.search(filter='(objectclass=group)')
-
 	# Search by SAM
 	def search_by_sam(self, sAMAccountName):return self.search(filter='(sAMAccountName=%s)'%sAMAccountName)
 	# Search by cn

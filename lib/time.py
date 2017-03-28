@@ -2,24 +2,33 @@
 ########################################################################
 ##### LDAP time converter 
 ########################################################################
-import re, datetime , sys
+import datetime
+import sys
 
-def timeConvert(timestamp):
+def ldap_time_converter(timestamp):
 	'''Time Convert Function'''
+
 	try:
 		#### Convert YMD LDAP timestamps
 		if '0z' in timestamp.lower():
 			converted_time = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M%S.0z")
 			converted_time = str(converted_time.date())
+		
+		#### Convert 18-digit LDAP timestamps to human readable date
 		else:
-			#### Convert 18-digit LDAP timestamps to human readable date
+			#### Ignore millisecond
 			timestamp = timestamp[:18]
+			#### epoch Time
 			epoch_start = datetime.datetime(year=1601, month=1,day=1)
+			#### Timestamp to Seconds since epoch 
 			seconds_since_epoch = float(timestamp)/10**7
+			#### Convert Timestamp
 			converted_time = epoch_start + datetime.timedelta(seconds=seconds_since_epoch)
+			#### Convert it to day
 			converted_time = str(converted_time.date())
-			# converted_time = datetime.datetime.fromtimestamp(float(timestamp)).strftime('%D')
+
 	except:
 		print >> sys.stderr, "timestamp Error", timestamp
-		converted_time = 'None'
+		converted_time = str(timestamp)
+	
 	return converted_time

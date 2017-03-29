@@ -75,7 +75,7 @@ match = ldap.search(users, sam='kandi')
 matched_groups = ldap.search(groups, name='seacurity')
 
 # search all users that their manager '*yahia*'
-match = ldap.search(users, Name='manager', Value='yahia')
+match = ldap.search(users, Key='manager', Value='yahia')
 ```
 
 ## Decoding

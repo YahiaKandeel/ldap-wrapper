@@ -109,12 +109,9 @@ ad.connect()
 #### Dumping all AD
 data  = ad.dump_all()
 users = data['users']
+
 ### result
 output = 'data/users.csv'
-
-#### Dumping all AD
-data  = ad.dump_all()
-users = data['users']
 
 #### Decoding all users
 decoded_users = {}
